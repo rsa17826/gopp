@@ -127,14 +127,14 @@ func (p *Printer) writeParts(parts []string, o writeOpts) {
 func (p *Printer) Log(a ...any) {
 	parts := make([]string, len(a))
 	for i, v := range a {
-		parts[i] = p.FormatItem(v)
+		parts[i] = p.FormatItem(v, false)
 	}
 	p.writeParts(parts, writeOpts{sep: " ", end: "\n"})
 }
 func (p *Printer) Plain(a ...any) {
 	parts := make([]string, len(a))
 	for i, v := range a {
-		parts[i] = p.FormatItem(v)
+		parts[i] = p.FormatItem(v, false)
 	}
 	p.writeParts(parts, writeOpts{sep: " ", end: "\n"})
 }
@@ -142,7 +142,7 @@ func (p *Printer) Plain(a ...any) {
 func (p *Printer) Plainest(a ...any) {
 	parts := make([]string, len(a))
 	for i, v := range a {
-		parts[i] = stripANSI(p.FormatItem(v))
+		parts[i] = p.FormatItem(v, true)
 	}
 	p.writeParts(parts, writeOpts{sep: " ", end: "\n"})
 }
@@ -183,7 +183,7 @@ func (p *Printer) printLabeled(label, colorName string, a ...any) {
 	parts := make([]string, 0, len(a)+1)
 	parts = append(parts, prefix)
 	for _, v := range a {
-		parts = append(parts, p.FormatItem(v))
+		parts = append(parts, p.FormatItem(v, false))
 	}
 	p.writeParts(parts, writeOpts{sep: " ", end: "\n"})
 }
@@ -199,7 +199,7 @@ func Success(a ...any) { Default.Success(a...) }
 
 // FormatItem formats a single value the same way Plain/Debug/etc. do,
 // without printing it — useful for building your own log lines.
-func FormatItem(item any) string { return Default.FormatItem(item) }
+func FormatItem(item any) string { return Default.FormatItem(item, false) }
 
 // ---------------------------------------------------------------------------
 // Core recursive formatter (mirrors formatitem)
@@ -209,11 +209,11 @@ func FormatItem(item any) string { return Default.FormatItem(item) }
 // strings, comma-grouped numbers, {}/[] collections that wrap past WrapAt
 // visible characters, struct fields shown like a map, and funcs shown as
 // <function Name>.
-func (p *Printer) FormatItem(item any) string {
-	return p.formatItem(item, -2, false)
+func (p *Printer) FormatItem(item any, plainString bool) string {
+	return p.formatItem(item, -2, false, plainString)
 }
 
-func (p *Printer) formatItem(item any, tab int, isArrAfterDict bool) (result string) {
+func (p *Printer) formatItem(item any, tab int, isArrAfterDict bool, plainString bool) (result string) {
 	tab += 2
 
 	defer func() {
@@ -240,6 +240,9 @@ func (p *Printer) formatItem(item any, tab int, isArrAfterDict bool) (result str
 
 	// fmt.Stringer: prefer the custom String() over reflecting into fields.
 	if s, ok := item.(fmt.Stringer); ok {
+		if plainString {
+			return s.String()
+		}
 		return p.formatString(s.String())
 	}
 
@@ -415,11 +418,11 @@ func (p *Printer) formatMap(rv reflect.Value, tab int, isArrAfterDict bool) stri
 		if s, ok := keyStr.(string); ok {
 			keyRendered = p.color("purple") + `"` + s + `"` + p.color("end")
 		} else {
-			keyRendered = p.formatItem(keyStr, 0, false)
+			keyRendered = p.formatItem(keyStr, 0, false, false)
 		}
 		entries[i] = kv{
 			key:   keyRendered,
-			value: p.formatItem(rv.MapIndex(k).Interface(), 0, true),
+			value: p.formatItem(rv.MapIndex(k).Interface(), 0, true, false),
 		}
 	}
 
@@ -439,7 +442,7 @@ func (p *Printer) formatStruct(rv reflect.Value, tab int, isArrAfterDict bool) s
 		fv := rv.Field(i)
 		entries = append(entries, kv{
 			key:   p.color("purple") + `"` + field.Name + `"` + p.color("end"),
-			value: p.formatItem(fv.Interface(), 0, true),
+			value: p.formatItem(fv.Interface(), 0, true, false),
 		})
 	}
 
@@ -493,7 +496,7 @@ func (p *Printer) formatSlice(rv reflect.Value, tab int, isArrAfterDict bool) st
 	itemIsSimple := make([]bool, n)
 	for i := 0; i < n; i++ {
 		v := rv.Index(i).Interface()
-		items[i] = p.formatItem(v, -2, false)
+		items[i] = p.formatItem(v, -2, false, false)
 		switch v.(type) {
 		case string, int, int8, int16, int32, int64,
 			uint, uint8, uint16, uint32, uint64, float32, float64:
