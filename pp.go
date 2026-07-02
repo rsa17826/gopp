@@ -240,7 +240,7 @@ func (p *Printer) formatItem(item any, tab int, isArrAfterDict bool, plainString
 
 	// fmt.Stringer: prefer the custom String() over reflecting into fields.
 	if s, ok := item.(fmt.Stringer); ok {
-		if true {
+		if plainString {
 			return s.String()
 		}
 		return p.formatString(s.String())
@@ -255,6 +255,9 @@ func (p *Printer) formatItem(item any, tab int, isArrAfterDict bool, plainString
 
 	// Strings
 	if s, ok := item.(string); ok {
+		if plainString {
+			return s
+		}
 		return p.formatString(s)
 	}
 
