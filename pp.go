@@ -306,9 +306,9 @@ func (p *Printer) formatFunc(rv reflect.Value) string {
 }
 
 func (p *Printer) formatString(s string) string {
-	escaped := strings.ReplaceAll(s, `\`, `\\`)
-	escaped = strings.ReplaceAll(escaped, `"`, `\"`)
-	return p.color("purple") + `"` + escaped + `"` + p.color("end")
+	// escaped := strings.ReplaceAll(s, `\`, `\\`)
+	// escaped = strings.ReplaceAll(escaped, `"`, `\"`)
+	return p.color("purple") + `"` + s + `"` + p.color("end")
 }
 
 // typeLabel renders "╟TypeName╣" in pink for named types, or "" for
