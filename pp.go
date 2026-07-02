@@ -124,10 +124,25 @@ func (p *Printer) writeParts(parts []string, o writeOpts) {
 }
 
 // Plain prints each argument formatted and colorized, with no level label.
+func (p *Printer) Log(a ...any) {
+	parts := make([]string, len(a))
+	for i, v := range a {
+		parts[i] = p.FormatItem(v)
+	}
+	p.writeParts(parts, writeOpts{sep: " ", end: "\n"})
+}
 func (p *Printer) Plain(a ...any) {
 	parts := make([]string, len(a))
 	for i, v := range a {
 		parts[i] = p.FormatItem(v)
+	}
+	p.writeParts(parts, writeOpts{sep: " ", end: "\n"})
+}
+
+func (p *Printer) Plainest(a ...any) {
+	parts := make([]string, len(a))
+	for i, v := range a {
+		parts[i] = stripANSI(p.FormatItem(v))
 	}
 	p.writeParts(parts, writeOpts{sep: " ", end: "\n"})
 }
