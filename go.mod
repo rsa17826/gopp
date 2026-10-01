@@ -1,3 +1,3 @@
 module github.com/rsa17826/gopp
 
-go 1.22.2
+go 1.26.2
